@@ -4,8 +4,8 @@
                     (not (gnutls-available-p))))
        (proto (if no-ssl "http" "https")))
   ;; Comment/uncomment these two lines to enable/disable MELPA and MELPA Stable as desired
-  ;;(add-to-list 'package-archives (cons "melpa" (concat proto "://melpa.org/packages/")) t)
-  (add-to-list 'package-archives (cons "melpa-stable" (concat proto "://stable.melpa.org/packages/")) t)
+  (add-to-list 'package-archives (cons "melpa" (concat proto "://melpa.org/packages/")) t)
+  ;;(add-to-list 'package-archives (cons "melpa-stable" (concat proto "://stable.melpa.org/packages/")) t)
   (when (< emacs-major-version 24)
     ;; For important compatibility libraries like cl-lib
     (add-to-list 'package-archives '("gnu" . (concat proto "://elpa.gnu.org/packages/")))))
@@ -142,7 +142,17 @@ instead of the width measured by char-width."
   (helm-mode 1)
   (setq helm-split-window-in-side-p t
 	helm-echo-input-in-header-line t
-	helm-display-header-line nil))
+	helm-display-header-line nil)
+
+  (defun my/helm-hide-minibuffer-maybe ()
+	(when (with-helm-buffer helm-echo-input-in-header-line)
+      (let ((ov (make-overlay (point-min) (point-max) nil nil t)))
+        (overlay-put ov 'window (selected-window))
+        (overlay-put ov 'face (let ((bg-color (face-background 'default nil)))
+                                `(:background ,bg-color :foreground ,bg-color)))
+        (setq-local cursor-type nil))))
+  
+  (add-hook 'helm-minibuffer-set-up-hook 'helm-hide-minibuffer-maybe))
 
 
 ;;; which-key
@@ -160,20 +170,37 @@ instead of the width measured by char-width."
   :init
   (smartparens-global-mode))
 
+;;; Show parens mode
+(setq show-paren-delay 0)
+(show-paren-mode)
+
 
 ;;; Line numbers
+(setq display-line-numbers t)
 (global-linum-mode t)
-(setq display-line-numbers 'relative)
+(linum-relative-mode t) ; Set the line numbers to relative
+(setq linum-relative-backend 'display-line-numbers-mode)
+(setq linum-relative-current-symbol "")
+
+;;; Custom variables
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(column-number-mode t)
+ '(custom-safe-themes
+   (quote
+	("04dd0236a367865e591927a3810f178e8d33c372ad5bfef48b5ce90d4b476481" "7153b82e50b6f7452b4519097f880d968a6eaf6f6ef38cc45a144958e553fbc6" default)))
+ '(delete-selection-mode t)
+ '(global-linum-mode t)
  '(helm-completion-style (quote emacs))
+ '(line-number-mode nil)
  '(package-selected-packages
    (quote
-	(company-irony company which-key use-package smartparens org-bullets helm alect-themes)))
- '(scroll-bar-mode nil))
+	(expand-region linum-relative highligt-indent-guides highlight-indent-guides company-irony company which-key use-package smartparens org-bullets helm alect-themes)))
+ '(scroll-bar-mode nil)
+ '(size-indication-mode t))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
@@ -202,17 +229,40 @@ instead of the width measured by char-width."
 							indent-tabs-mode t)   ;;; not working??
 
 ;;; Company autocompletion setup
-(use-package company
-  :ensure t
-  :init
-  (add-hook 'after-init-hook 'global-company-mode)
-  :config
-  (setq company-dabbrev-downcase 0)
-  (setq company-idle-delay 0.1)
-  (setq company-minimum-prefix-length 1)
-  (setq company-tooltip-align-annotations t))
+;; (use-package company
+;;   :ensure t
+;;   :init
+;;   (add-hook 'after-init-hook 'global-company-mode)
+;;   :config
+;;   (setq company-dabbrev-downcase 0)
+;;   (setq company-idle-delay 0.1)
+;;   (setq company-minimum-prefix-length 1)
+;;   (setq company-tooltip-align-annotations t))
 
 
 ;;; Irony, company backend
 (eval-after-load 'company
   '(add-to-list 'company-backends 'company-irony))
+
+;;; Save buffers
+(setq desktop-save-mode t
+	  save-place-mode t)
+
+;;; Indentation guide
+(add-hook 'prog-mode-hook 'highlight-indent-guides-mode)
+(setq highlight-indent-guides-method 'character
+	  highlight-indent-guides-auto-enabled t)
+
+
+;;; Modeline configurations
+(line-number-mode -1)
+(column-number-mode t)
+
+
+;;; Delete selection mode when typing
+(delete-selection-mode t)
+
+;;; Expand region
+(use-package expand-region
+  :config
+  (global-set-key (kbd "C-=") 'er/expand-region))
