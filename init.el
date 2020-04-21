@@ -168,7 +168,13 @@ instead of the width measured by char-width."
 (use-package smartparens
   :ensure t
   :init
-  (smartparens-global-mode))
+  (smartparens-global-mode)
+  (setq sp-highlight-pair-overlay nil
+		sp-highlight-wrap-overlay nil
+		sp-highlight-wrap-tag-overlay nil)
+  (sp-local-pair 'emacs-lisp-mode "'" nil :actions nil)
+  (sp-local-pair 'c-mode-common-hook "{}" nil :actions nil)
+  (sp-local-pair 'c-mode-common-hook "{" " }"))
 
 ;;; Show parens mode
 (setq show-paren-delay 0)
@@ -266,3 +272,17 @@ instead of the width measured by char-width."
 (use-package expand-region
   :config
   (global-set-key (kbd "C-=") 'er/expand-region))
+
+
+;;; mark current line
+(global-hl-line-mode)
+
+
+;;; delete whitespace and newline in cc modes
+(add-hook 'c-mode-common-hook (lambda()
+								(c-toggle-auto-hungry-state t)
+								(c-toggle-electric-state t)
+								(electric-pair-mode t)))
+
+;;; Remove minimize keybinding
+(global-unset-key (kbd "C-z"))
